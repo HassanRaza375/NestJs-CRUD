@@ -13,8 +13,14 @@ export class UsersService {
     { id: 6, name: 'Diana Green', role: 'Intern' },
     { id: 7, name: 'Ethan Blue', role: 'Employee' },
   ];
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  create(createUserDto: { name: string; role: string }) {
+    const HighestId = this.users.reduce(
+      (max, user) => Math.max(max, user.id),
+      0,
+    );
+    const newUser = { id: HighestId + 1, ...createUserDto };
+    this.users.push(newUser);
+    return newUser;
   }
 
   findAll(role?: 'Intern' | 'Employee' | 'Manager') {
