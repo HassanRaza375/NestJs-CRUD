@@ -5,15 +5,15 @@ import { UpdateUserDto } from './dto/update-user.dto';
 @Injectable()
 export class UsersService {
   private users = [
-    { id: 1, name: 'John Doe', role: 'Employee' },
-    { id: 2, name: 'Jane Smith', role: 'Manager' },
-    { id: 3, name: 'Alice Johnson', role: 'Intern' },
-    { id: 4, name: 'Bob Brown', role: 'Employee' },
-    { id: 5, name: 'Charlie White', role: 'Manager' },
-    { id: 6, name: 'Diana Green', role: 'Intern' },
-    { id: 7, name: 'Ethan Blue', role: 'Employee' },
+    { id: 1, name: 'John Doe', role: 'Employee', email: 'Abc@gmail.com' },
+    { id: 2, name: 'Jane Smith', role: 'Manager', email: 'Abc@gmail.com' },
+    { id: 3, name: 'Alice Johnson', role: 'Intern', email: 'Abc@gmail.com' },
+    { id: 4, name: 'Bob Brown', role: 'Employee', email: 'Abc@gmail.com' },
+    { id: 5, name: 'Charlie White', role: 'Manager', email: 'Abc@gmail.com' },
+    { id: 6, name: 'Diana Green', role: 'Intern', email: 'Abc@gmail.com' },
+    { id: 7, name: 'Ethan Blue', role: 'Employee', email: 'Abc@gmail.com' },
   ];
-  create(createUserDto: { name: string; role: string }) {
+  create(createUserDto: CreateUserDto) {
     const HighestId = this.users.reduce(
       (max, user) => Math.max(max, user.id),
       0,
@@ -35,10 +35,16 @@ export class UsersService {
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+    let updatedObj = this.findOne(id);
+    this.users = this.users.map((e) =>
+      e.id === id ? { ...e, ...updateUserDto } : e,
+    );
+    return updatedObj;
   }
 
   remove(id: number) {
-    return `This action removes a #${id} user`;
+    let deletedObj = this.findOne(id);
+    this.users = this.users.filter((e) => e.id !== id);
+    return deletedObj;
   }
 }
