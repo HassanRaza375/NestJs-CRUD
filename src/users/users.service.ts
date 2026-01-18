@@ -1,17 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
   private users = [
-    { id: 1, name: 'John Doe', role: 'Employee', email: 'Abc@gmail.com' },
-    { id: 2, name: 'Jane Smith', role: 'Manager', email: 'Abc@gmail.com' },
-    { id: 3, name: 'Alice Johnson', role: 'Intern', email: 'Abc@gmail.com' },
-    { id: 4, name: 'Bob Brown', role: 'Employee', email: 'Abc@gmail.com' },
-    { id: 5, name: 'Charlie White', role: 'Manager', email: 'Abc@gmail.com' },
-    { id: 6, name: 'Diana Green', role: 'Intern', email: 'Abc@gmail.com' },
-    { id: 7, name: 'Ethan Blue', role: 'Employee', email: 'Abc@gmail.com' },
+    { id: 1, name: 'John Doe', role: 'Employee' },
+    { id: 2, name: 'Jane Smith', role: 'Manager' },
+    { id: 3, name: 'Alice Johnson', role: 'Intern' },
+    { id: 4, name: 'Bob Brown', role: 'Employee' },
+    { id: 5, name: 'Charlie White', role: 'Manager' },
+    { id: 6, name: 'Diana Green', role: 'Intern' },
+    { id: 7, name: 'Ethan Blue', role: 'Employee' },
   ];
   create(createUserDto: CreateUserDto) {
     const HighestId = this.users.reduce(
@@ -25,26 +26,26 @@ export class UsersService {
 
   findAll(role?: 'Intern' | 'Employee' | 'Manager') {
     if (role) {
-      return this.users.filter((user) => user.role === role);
+      const rolesarray = this.users.filter((user) => user.role === role);
+      if (rolesarray.length < 1) throw new NotFoundException("role not found")
+      return rolesarray
     }
     return this.users;
   }
 
   findOne(id: number) {
-    return this.users.filter((e) => e.id === id);
+    const user = this.users.find((e) => e.id === id);
+    if (!user) throw new NotFoundException("user not found")
+    return user
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
-    let updatedObj = this.findOne(id);
-    this.users = this.users.map((e) =>
-      e.id === id ? { ...e, ...updateUserDto } : e,
-    );
-    return updatedObj;
+    return `This action updates a #${id} user`;
   }
 
   remove(id: number) {
-    let deletedObj = this.findOne(id);
+    const removedUser = this.users.filter((e) => e.id === id)
     this.users = this.users.filter((e) => e.id !== id);
-    return deletedObj;
+    return removedUser
   }
 }
