@@ -11,26 +11,46 @@ export class UsersService {
     });
   }
 
-  findAll() {
-    return this.prisma.user.findMany();
+  async findAll() {
+    const res = await this.prisma.user.findMany();
+    if (res.length) {
+      return res;
+    } else {
+      return [];
+    }
   }
 
-  findOne(id: number) {
-    return this.prisma.user.findUnique({
+  async findOne(id: number) {
+    const res = await this.prisma.user.findUnique({
       where: { id },
     });
+    if (res) {
+      return res;
+    } else {
+      return null;
+    }
   }
 
-  update(id: number, data: { name?: string }) {
-    return this.prisma.user.update({
-      where: { id },
-      data,
-    });
+  async update(id: number, data: { name?: string }) {
+    const userExist = await this.findOne(id);
+    if (userExist) {
+      return this.prisma.user.update({
+        where: { id },
+        data,
+      });
+    } else {
+      return { message: 'no user found' };
+    }
   }
 
-  remove(id: number) {
-    return this.prisma.user.delete({
-      where: { id },
-    });
+  async remove(id: number) {
+    const userExist = await this.findOne(id);
+    if (userExist) {
+      return this.prisma.user.delete({
+        where: { id },
+      });
+    } else {
+      return { message: 'no user found' };
+    }
   }
 }
