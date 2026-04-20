@@ -1,22 +1,12 @@
 import { Injectable } from '@nestjs/common';
-
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 @Injectable()
 export class UserService {
   private users = [
-    { id: 1, name: 'John Doe', role: 'admin' },
-    { id: 1, name: 'John Doe', role: 'admin' },
-    { id: 1, name: 'John Doe', role: 'admin' },
-    { id: 1, name: 'John Doe', role: 'admin' },
-    { id: 1, name: 'John Doe', role: 'admin' },
-    { id: 2, name: 'Jane', role: 'customer' },
-    { id: 2, name: 'Jane', role: 'customer' },
-    { id: 2, name: 'Jane', role: 'customer' },
-    { id: 2, name: 'Jane', role: 'customer' },
-    { id: 3, name: 'Gull Pana', role: 'manager' },
-    { id: 3, name: 'Gull Pana', role: 'manager' },
-    { id: 3, name: 'Gull Pana', role: 'manager' },
-    { id: 3, name: 'Gull Pana', role: 'manager' },
-    { id: 3, name: 'Gull Pana', role: 'manager' },
+    { id: 1, name: 'John Doe', email: 'jDy9I@example.com', role: 'admin' },
+    { id: 2, name: 'Jane', email: 'jane@example.com', role: 'customer' },
+    { id: 3, name: 'Gull Pana', email: 'gull@example.com', role: 'manager' },
   ];
   findAll(role?: 'admin' | 'customer' | 'manager') {
     if (role) {
@@ -27,19 +17,38 @@ export class UserService {
   findOne(id: number) {
     return this.users.find((user) => user.id === id);
   }
-  create(user: { name: string; role: string }) {
-    let newId = this.users.length + 1;
-    let obj = { id: newId, ...user };
-    return this.users.push(obj);
+  create(createUserDto: CreateUserDto) {
+    const newId = this.users.length + 1;
+
+    const obj = { id: newId, ...createUserDto };
+
+    this.users.push(obj);
+
+    return obj;
   }
-  update(id: number, updatedUser: { name: string; role: string }) {
-    let index = this.users.findIndex((user) => user.id === id);
-    this.users[index] = { id, ...updatedUser };
-    return this.findOne(id);
+  update(id: number, updateUserDto: UpdateUserDto) {
+    const index = this.users.findIndex((user) => user.id === id);
+
+    if (index === -1) {
+      return null;
+    }
+
+    this.users[index] = {
+      ...this.users[index],
+      ...updateUserDto,
+    };
+
+    return this.users[index];
   }
   remove(id: number) {
-    let index = this.users.findIndex((user) => user.id === id);
+    const index = this.users.findIndex((user) => user.id === id);
+
+    if (index === -1) return null;
+
+    const removed = this.users[index];
+
     this.users.splice(index, 1);
-    return this.users[index];
+
+    return removed;
   }
 }
