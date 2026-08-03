@@ -44,6 +44,142 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Prisma + PostgreSQL setup (Prisma ORM v7)
+
+NestJS → PrismaService → Prisma Client → PostgreSQL
+
+Prisma v7 changed a few things from older guides: it requires a driver adapter for SQL
+databases, no longer auto-loads `.env`, and its client generator defaults to ESM output.
+Follow these steps in order to avoid a client that silently fails to start.
+
+### 1. Install Prisma, the client, the Postgres driver adapter, and dotenv
+
+```bash
+npm install --save-dev prisma
+npm install @prisma/client @prisma/adapter-pg pg dotenv
+```
+
+### 2. Initialize Prisma
+
+```bash
+npx prisma init --datasource-provider postgresql
+```
+
+This creates `prisma/schema.prisma`, `prisma.config.ts`, and a starter `.env`.
+
+### 3. Configure the generator for a CommonJS (Nest) project
+
+In `prisma/schema.prisma`, the `prisma-client` generator defaults to ESM output
+(`import.meta.url`), which crashes silently when `require()`-d from a CommonJS Nest build.
+Force CommonJS output explicitly:
+
+```prisma
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+```
+
+### 4. Configure the PostgreSQL connection
+
+In `.env`:
+
+```bash
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/nest_practice?schema=public"
+```
+
+Replace `YOUR_PASSWORD` with your PostgreSQL password. This maps to:
+
+```
+username: postgres
+password: YOUR_PASSWORD
+host:     localhost
+port:     5432
+database: nest_practice
+```
+
+Prisma v7 does not auto-load `.env` files anymore, so load it explicitly in
+`prisma.config.ts`:
+
+```typescript
+import 'dotenv/config'; // must be the first import
+import { defineConfig } from 'prisma/config';
+
+export default defineConfig({
+  schema: 'prisma/schema.prisma',
+  migrations: { path: 'prisma/migrations' },
+  datasource: { url: process.env.DATABASE_URL },
+});
+```
+
+`prisma.config.ts` only covers the Prisma CLI. Your app's own entry point (`src/main.ts`)
+needs the same `import 'dotenv/config';` as its **first line**, or `DATABASE_URL` will be
+`undefined` at runtime and the app will fail to connect (or, depending on the bug, fail to
+boot at all with no error printed).
+
+### 5. Define your first model
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
+
+### 6. Create the migration and generate the client
+
+```bash
+npx prisma migrate dev --name init
+```
+
+(`prisma generate` runs automatically after a migration; run it manually after any later
+schema change with `npx prisma generate`.)
+
+### 7. Wire up PrismaService with the driver adapter
+
+SQL providers require an explicit driver adapter in v7 — `new PrismaClient()` alone will not
+connect:
+
+```typescript
+// src/prisma/prisma.service.ts
+import { Injectable } from '@nestjs/common';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../../generated/prisma/client';
+
+@Injectable()
+export class PrismaService extends PrismaClient {
+  constructor() {
+    const adapter = new PrismaPg({
+      connectionString: process.env.DATABASE_URL!,
+    });
+    super({ adapter });
+  }
+}
+```
+
+### 8. Inspect your data
+
+```bash
+npx prisma studio
+```
+
+### Checklist if the API refuses to connect after setup
+
+- `moduleFormat = "cjs"` is set in the generator block (unless the whole project is ESM).
+- `import 'dotenv/config';` is the first line of `src/main.ts`, not just `prisma.config.ts`.
+- `dotenv` is a direct dependency in `package.json`, not just transitive.
+- PostgreSQL is actually running and listening on the port in `DATABASE_URL`.
+
 ## Run tests
 
 ```bash
