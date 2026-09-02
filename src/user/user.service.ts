@@ -7,4 +7,17 @@ export class UserService {
   findAll() {
     return this.prisma.user.findMany();
   }
+  findOne(user: any) {
+    console.log('logged', user);
+    return this.prisma.user.findUnique({
+      where: {
+        id: user?.sub,
+      },
+      select: {
+        id: true,
+        email: true,
+        createdAt: true,
+      },
+    });
+  }
 }
